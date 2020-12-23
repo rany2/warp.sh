@@ -4,7 +4,7 @@ By using this you agree to Cloudflare's ToS: https://www.cloudflare.com/applicat
 
 ## How to use?
 
-Make sure to have `jq`, `curl`, and `wireguard-tools` installed before using this bash script.  
+Make sure to have `jq`, `curl`, `less`, and `wireguard-tools` installed before using this bash script.  
 
 ```shell
 git clone https://github.com/rany2/warp.sh.git

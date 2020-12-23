@@ -5,51 +5,60 @@ set -eu
 prefix="https://api.cloudflareclient.com/v0a977"
 
 show_help() {
+	{
 	echo ""
 	echo -e "Usage\t$0 [options]"
 	echo -e "\t-4\tuse ipv4 for wireguard endpoint and curl"
 	echo -e "\t-6\tuse ipv6 for wireguard endpoint and curl"
 	echo -e "\t-a\tuse DNS hostname for wireguard (overrides -4 or -6 for wireguard but keeps option for curl)"
-	echo -e ""
+	echo -e "\t-s\tshow status and exit only"
+	echo -e "\t-t\tshow cloudflare trace and exit only"
+	echo ""
+	} | less -FR
 }
 
-curlopts=""
+show_trace() {
+	curl "${curlopts[@]}" "https://1.1.1.1/cdn-cgi/trace" | less -FR
+}
+
+curlopts=( --header 'User-Agent: okhttp/3.12.1' --header 'Content-Type: application/json' --silent --compressed )
 wgoverride=0
 wgproto=0
-while getopts "h?46a" opt; do
+status=0
+trace=0
+while getopts "h?46ast" opt; do
 	case "$opt" in
 		h|\?)
 			show_help
 			exit 0
 		;;
 		4)
-			curlopts+=" -4"
+			curlopts+=( --ipv4 )
 			wgproto=4
 		;;
 		6)
-			curlopts+=" -6"
+			curlopts+=( --ipv6 )
 			wgproto=6
 		;;
-		a)
-			wgoverride=1
+		a) wgoverride=1 ;;
+		s) status=1 ;;
+		t)
+			show_trace
+			exit 0
 		;;
 	esac
 done
 
 if [ -f "warp.source" ];then
 	source "warp.source"
-	reg="$(curl $curlopts --compressed -s \
-		-H 'User-Agent: okhttp/3.12.1' \
-		-H "Authorization: Bearer ${auth[1]}" \
-		-H 'Content-Type: application/json' \
+	reg="$(curl "${curlopts[@]}" \
+		--header "Authorization: Bearer ${auth[1]}" \
 		"${prefix}/reg/${auth[0]}")"
 else
 	priv="$(wg genkey)"
 	publ="$(printf '%s' "$priv"|wg pubkey)"
-	reg="$(curl $curlopts --compressed -s \
-		-H 'User-Agent: okhttp/3.12.1' \
-		-H 'Content-Type: application/json' \
-		-X "POST" -d '{"install_id":"","tos":"'"$(date -u +%FT%T.000Z)"'","key":"'"${publ}"'","fcm_token":"","type":"ios","locale":"en_US"}' \
+	reg="$(curl "${curlopts[@]}" \
+		--request "POST" --data '{"install_id":"","tos":"'"$(date -u +%FT%T.000Z)"'","key":"'"${publ}"'","fcm_token":"","type":"ios","locale":"en_US"}' \
 		"${prefix}/reg")"
 	auth=( $(printf '%s' "$reg" | jq -r '.id+" "+.token') )
 	{
@@ -60,11 +69,16 @@ else
 	} > warp.source
 fi
 
-curl $curlopts --compressed -s \
-	-H 'User-Agent: okhttp/3.12.1' \
-	-H "Authorization: Bearer ${auth[1]}" \
-	-H 'Content-Type: application/json' \
-	-X "PATCH" -d '{"warp_enabled":true}' \
+if [ "$status" = 1 ];then
+	curl "${curlopts[@]}" \
+		--header "Authorization: Bearer ${auth[1]}" \
+	        "${prefix}/reg/${auth[0]}" | jq -C | less -FR
+	exit 0
+fi
+
+curl "${curlopts[@]}" \
+	--header "Authorization: Bearer ${auth[1]}" \
+	--request "PATCH" --data '{"warp_enabled":true}' \
 	"${prefix}/reg/${auth[0]}" >/dev/null 2>&1
 
 wg="host"
