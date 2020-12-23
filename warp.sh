@@ -5,7 +5,6 @@ set -eu
 prefix="https://api.cloudflareclient.com/v0a977"
 
 show_help() {
-	{
 	echo ""
 	echo -e "Usage\t$0 [options]"
 	echo -e "\t-4\tuse ipv4 for wireguard endpoint and curl"
@@ -14,18 +13,16 @@ show_help() {
 	echo -e "\t-s\tshow status and exit only"
 	echo -e "\t-t\tshow cloudflare trace and exit only"
 	echo ""
-	} | less -FR
 }
 
 show_trace() {
-	curl "${curlopts[@]}" "https://1.1.1.1/cdn-cgi/trace" | less -FR
+	curl "${curlopts[@]}" "https://1.1.1.1/cdn-cgi/trace"
 }
 
 curlopts=( --header 'User-Agent: okhttp/3.12.1' --header 'Content-Type: application/json' --silent --compressed )
 wgoverride=0
 wgproto=0
 status=0
-trace=0
 while getopts "h?46ast" opt; do
 	case "$opt" in
 		h|\?)
@@ -72,7 +69,7 @@ fi
 if [ "$status" = 1 ];then
 	curl "${curlopts[@]}" \
 		--header "Authorization: Bearer ${auth[1]}" \
-	        "${prefix}/reg/${auth[0]}" | jq -C | less -FR
+	        "${prefix}/reg/${auth[0]}" | jq
 	exit 0
 fi
 
