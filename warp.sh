@@ -67,9 +67,7 @@ else
 fi
 
 if [ "$status" = 1 ];then
-	curl "${curlopts[@]}" \
-		--header "Authorization: Bearer ${auth[1]}" \
-	        "${prefix}/reg/${auth[0]}" | jq
+	printf '%s' "$reg" | jq
 	exit 0
 fi
 
