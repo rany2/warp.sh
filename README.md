@@ -27,10 +27,11 @@ use `./warp.sh -4` instead of `./warp.sh`.
 
 ```
 Usage	./warp.sh [options]
-	-4	use ipv4 for wireguard endpoint and curl
-	-6	use ipv6 for wireguard endpoint and curl
-	-a	use DNS hostname for wireguard (overrides -4 or -6 for wireguard but keeps option for curl) (default)
-	-s	show status and exit only
-	-t	show cloudflare trace and exit only
-	-h	show this help page and exit only
+
+-4	use ipv4 for wireguard endpoint and curl
+-6	use ipv6 for wireguard endpoint and curl
+-a	use DNS hostname for wireguard (overrides -4 or -6 for wireguard but keeps option for curl) (default)
+-s	show status and exit only
+-t	show cloudflare trace and exit only
+-h	show this help page and exit only
 ```
