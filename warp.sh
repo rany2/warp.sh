@@ -91,7 +91,7 @@ cfg=( $(printf '%s' "$reg" | jq -r '.config|(.peers[0]|.public_key+" "+.endpoint
 	echo "[Interface]"
 	echo "Address = ${cfg[2]},${cfg[3]}"
 	echo "PrivateKey = ${priv}"
-	echo "DNS = 1.1.1.1,1.0.0.1,2606:4700:4700::1111,2606:4700:4700::1001"
+	echo "DNS = 1.1.1.1,2606:4700:4700::1111"
 	echo "MTU = 1280"
 	echo ""
 	echo "[Peer]"
