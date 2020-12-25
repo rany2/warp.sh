@@ -6,13 +6,13 @@ prefix="https://api.cloudflareclient.com/v0a977"
 
 show_help() {
 	echo ""
-	echo -e "Usage\t$0 [options]"
-	echo -e "\t-4\tuse ipv4 for wireguard endpoint and curl"
-	echo -e "\t-6\tuse ipv6 for wireguard endpoint and curl"
-	echo -e "\t-a\tuse DNS hostname for wireguard (overrides -4 or -6 for wireguard but keeps option for curl) (default)"
-	echo -e "\t-s\tshow status and exit only"
-	echo -e "\t-t\tshow cloudflare trace and exit only"
-	echo -e "\t-h\tshow this help page and exit only"
+	echo -e "Usage $0 [options]"
+	echo -e "  -4  use ipv4 for wireguard endpoint and curl"
+	echo -e "  -6  use ipv6 for wireguard endpoint and curl"
+	echo -e "  -a  use DNS hostname for wireguard (overrides -4 or -6 for wireguard but keeps option for curl) (default)"
+	echo -e "  -s  show status and exit only"
+	echo -e "  -t  show cloudflare trace and exit only"
+	echo -e "  -h  show this help page and exit only"
 	echo ""
 }
 
