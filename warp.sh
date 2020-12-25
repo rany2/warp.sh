@@ -20,7 +20,7 @@ show_trace() {
 	curl "${curlopts[@]}" "https://1.1.1.1/cdn-cgi/trace"
 }
 
-curlopts=( --header 'User-Agent: okhttp/3.12.1' --header 'Content-Type: application/json' --silent --compressed --tlsv1.3 )
+curlopts=( --header 'User-Agent: okhttp/3.12.1' --header 'Content-Type: application/json' --silent --compressed )
 wgoverride=0
 wgproto=0
 status=0
@@ -56,7 +56,7 @@ else
 	priv="$(wg genkey)"
 	publ="$(printf '%s' "$priv"|wg pubkey)"
 	reg="$(curl "${curlopts[@]}" \
-		--request "POST" --data '{"install_id":"","tos":"'"$(date -u +%FT%T.000Z)"'","key":"'"${publ}"'","fcm_token":"","type":"ios","locale":"en_US"}' \
+		--request "POST" --data '{"install_id":"","tos":"'"$(date -u +%FT%T.000Z)"'","key":"'"${publ}"'","fcm_token":"","type":"Android","locale":"en_US"}' \
 		"${prefix}/reg")"
 	auth=( $(printf '%s' "$reg" | jq -r '.id+" "+.token') )
 	{
