@@ -20,7 +20,7 @@ show_trace() {
 	curl "${curlopts[@]}" "https://1.1.1.1/cdn-cgi/trace"
 }
 
-curlopts=( --header 'User-Agent: okhttp/3.12.1' --header 'Content-Type: application/json' --silent --compressed )
+curlopts=( --header 'User-Agent: okhttp/3.12.1' --header 'Content-Type: application/json' --silent --compressed --tlsv1.3 )
 wgoverride=0
 wgproto=0
 status=0
