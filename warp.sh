@@ -17,7 +17,7 @@ show_help() {
 }
 
 show_trace() {
-	curl "${curlopts[@]}" "https://1.1.1.1/cdn-cgi/trace"
+	curl "${curlopts[@]}" "https://cloudflare.com/cdn-cgi/trace"
 }
 
 curlopts=( --header 'User-Agent: okhttp/3.12.1' --header 'Content-Type: application/json' --silent --compressed '--tlsv1.0' --tls-max 1.2 )
