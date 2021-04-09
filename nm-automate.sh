@@ -7,6 +7,8 @@
 ./warp.sh -4
 nmcli connection delete warp
 nmcli connection import file warp.conf type wireguard
+nmcli connection down warp
 nmcli connection modify warp ipv4.dns-priority -42
 nmcli connection modify warp ipv6.dns-priority -42
 nmcli connection modify warp connection.autoconnect yes
+nmcli connection up warp

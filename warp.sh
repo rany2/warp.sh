@@ -60,6 +60,7 @@ else
 	reg="$(curl "${curlopts[@]}" \
 		--request "POST" --data '{"install_id":"","tos":"'"$(date -u +%FT%T.000Z)"'","key":"'"${publ}"'","fcm_token":"","type":"Android","locale":"en_US"}' \
 		"${prefix}/reg")"
+	# shellcheck disable=SC2207
 	auth=( $(printf '%s' "$reg" | jq -r '.id+" "+.token') )
 	{
 	printf 'priv="%s"\n' "$priv"
@@ -87,6 +88,7 @@ if [ "$wgoverride" != 1 ];then
 	esac
 fi
 
+# shellcheck disable=SC2207
 cfg=( $(printf '%s' "$reg" | jq -r '.config|(.peers[0]|.public_key+" "+.endpoint.'$wg')+" "+.interface.addresses.v4+" "+.interface.addresses.v6') )
 
 {
