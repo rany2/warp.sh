@@ -1,3 +1,2 @@
-#!/usr/bin/env bash
-
+#!/bin/sh
 rm -f warp.source warp.conf

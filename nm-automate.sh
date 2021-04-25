@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # Helper script to generate warp config and import
 # it to NetworkManager (it will autoconnect by default)

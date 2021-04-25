@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # Android Wireguard Helper script
 # For use with the offical Wireguard app
