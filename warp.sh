@@ -6,7 +6,7 @@ warp_sourcefile="warp.source"
 warp_configfile="warp.conf"
 warp_apiurl='https://api.cloudflareclient.com/v0a977'
 
-# Default variables modified by user's options
+# Default variables that can be modified by user's options
 wgoverride=0; wgproto=0; status=0; trace=0; wg='host'
 
 # Setup headers, ciphers, and user agent to appear to be Android app
@@ -57,7 +57,7 @@ else
 		"${warp_apiurl}/reg")"
 	# shellcheck disable=SC2207
 	auth=( $(jq -r '.id+" "+.token' <<<"$reg") )
-	cat > warp.source <<-EOF
+	cat > "$warp_sourcefile" <<-EOF
 		priv=$priv
 		publ=$publ
 		auth[0]=${auth[0]}
@@ -74,6 +74,7 @@ then
 	esac
 fi
 
+# Load up variables for Wireguard templace with customized Endpoint based on user's choice
 # shellcheck disable=SC2207
 cfg=( $(jq -r '.config|(.peers[0]|.public_key+" "+.endpoint.'$wg')+" "+.interface.addresses.v4+" "+.interface.addresses.v6' <<<"$reg") )
 
