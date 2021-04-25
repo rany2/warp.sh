@@ -68,12 +68,14 @@ else
 	EOF
 fi
 
+# Show current config's status if requested
+[ "$status" = 1 ] && { jq <<<"$reg"; exit 0; }
+
 # Send a request to enable WARP
 curl "${curlopts[@]}" --header 'Content-Type: application/json' --header "Authorization: Bearer ${auth[1]}" \
 	--request "PATCH" --data '{"warp_enabled":true}' "${prefix}/reg/${auth[0]}" >/dev/null 2>&1
 
 # Change endpoint to v4 or v6 if the user requested it
-[ "$status" = 1 ] && { jq <<<"$reg"; exit 0; }
 if [ "$wgoverride" != 1 ]
 then
 	case "$wgproto" in
