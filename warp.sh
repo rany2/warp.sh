@@ -44,7 +44,10 @@ do
 	esac
 done
 
+# If requested, we show trace after all options have been parsed
 [ "$trace" = "1" ] && show_trace 0
+
+# If source file present, we don't register another time
 if [ -f "$warp_sourcefile" ]
 then
 	# shellcheck disable=SC1090
@@ -53,7 +56,7 @@ then
 else
 	priv="$(wg genkey)"
 	publ="$(wg pubkey <<<"$priv")"
-	reg="$(curl "${curlopts[@]}" --request "POST" --data '{"install_id":"","tos":"'"$(date -u +%FT%T.000Z)"'","key":"'"${publ}"'","fcm_token":"","type":"Android","locale":"en_US"}' \
+	reg="$(curl "${curlopts[@]}" --header 'Content-Type: application/json' --request "POST" --data '{"install_id":"","tos":"'"$(date -u +%FT%T.000Z)"'","key":"'"${publ}"'","fcm_token":"","type":"Android","locale":"en_US"}' \
 		"${warp_apiurl}/reg")"
 	# shellcheck disable=SC2207
 	auth=( $(jq -r '.id+" "+.token' <<<"$reg") )
@@ -65,6 +68,11 @@ else
 	EOF
 fi
 
+# Send a request to enable WARP
+curl "${curlopts[@]}" --header 'Content-Type: application/json' --header "Authorization: Bearer ${auth[1]}" \
+	--request "PATCH" --data '{"warp_enabled":true}' "${prefix}/reg/${auth[0]}" >/dev/null 2>&1
+
+# Change endpoint to v4 or v6 if the user requested it
 [ "$status" = 1 ] && { jq <<<"$reg"; exit 0; }
 if [ "$wgoverride" != 1 ]
 then
