@@ -7,7 +7,7 @@ warp_configfile="warp.conf"
 warp_apiurl='https://api.cloudflareclient.com/v0a977'
 
 # Default variables that can be modified by user's options
-wgoverride=0; wgproto=0; status=0; trace=0; wg='host'
+wgoverride=0; wgproto=0; nocurlprotoforce=0; status=0; trace=0; wg='host'
 
 # Setup headers, ciphers, and user agent to appear to be Android app
 curlopts=( --header 'User-Agent: okhttp/3.12.1' --header 'Accept: application/json' --silent --compressed --tls-max 1.2 )
@@ -20,7 +20,8 @@ help_page() { cat <<-EOF
 	Usage $0 [options]
 	  -4  use ipv4 for wireguard endpoint and curl
 	  -6  use ipv6 for wireguard endpoint and curl
-	  -a  use DNS hostname for wireguard (overrides -4 or -6 for wireguard but keeps option for curl) (default)
+	  -a  use DNS hostname for wireguard (if specified, it overrides -4 or -6 for wireguard but keeps option for curl)
+	  -c  don't force ipv4/ipv6 for curl but do force it for wireguard
 	  -s  show status and exit only
 	  -t  show cloudflare trace and exit only
 	  -h  show this help page and exit only
@@ -31,11 +32,12 @@ help_page() { cat <<-EOF
 }
 
 # Parse options
-while getopts "h46ast" opt
+while getopts "h46acst" opt
 do
 	case "$opt" in
-		4) curlopts+=( --ipv4 ); wgproto=4; ;;
-		6) curlopts+=( --ipv6 ); wgproto=6; ;;
+		4) wgproto=4; ;;
+		6) wgproto=6; ;;
+		c) nocurlprotoforce=1 ;;
 		a) wgoverride=1 ;;
 		s) status=1 ;;
 		t) trace=1 ;;
@@ -43,6 +45,15 @@ do
 		*) help_page 1 ;;
 	esac
 done
+
+# If user is okay with forcing IP protocol on curl, we do so
+if [ "$nocurlprotoforce" != "1" ]
+then
+	case "$wgproto" in
+		4) curlopts+=( --ipv4 ); ;;
+		6) curlopts+=( --ipv6 ); ;;
+	esac
+fi
 
 # If requested, we show trace after all options have been parsed
 [ "$trace" = "1" ] && show_trace 0
