@@ -4,7 +4,7 @@
 # it to NetworkManager (it will autoconnect by default)
 
 ./clean.sh
-./warp.sh -4
+./warp.sh
 nmcli connection delete warp
 nmcli connection import file warp.conf type wireguard
 nmcli connection down warp

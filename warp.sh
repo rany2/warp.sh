@@ -4,10 +4,10 @@
 set -euf
 warp_sourcefile="warp.source"
 warp_configfile="warp.conf"
-warp_apiurl='https://api.cloudflareclient.com/v0a977'
+warp_apiurl='https://api.cloudflareclient.com/v0a1922'
 
 # Default variables that can be modified by user's options
-wgoverride=0; wgproto=0; nocurlprotoforce=0; status=0; trace=0; wg='host'
+wgproto=0; status=0; trace=0
 
 # Setup headers, ciphers, and user agent to appear to be Android app
 curlopts=( --header 'User-Agent: okhttp/3.12.1' --header 'Accept: application/json' --silent --compressed --tls-max 1.2 )
@@ -18,10 +18,8 @@ show_trace() { curl "${curlopts[@]}" "https://cloudflare.com/cdn-cgi/trace"; exi
 help_page() { cat <<-EOF
 
 	Usage $0 [options]
-	  -4  use ipv4 for wireguard endpoint and curl
-	  -6  use ipv6 for wireguard endpoint and curl
-	  -a  use DNS hostname for wireguard (if specified, it overrides -4 or -6 for wireguard but keeps option for curl)
-	  -c  don't force ipv4/ipv6 for curl but do force it for wireguard
+	  -4  use ipv4 for curl
+	  -6  use ipv6 for curl
 	  -s  show status and exit only
 	  -t  show cloudflare trace and exit only
 	  -h  show this help page and exit only
@@ -37,8 +35,6 @@ do
 	case "$opt" in
 		4) wgproto=4; ;;
 		6) wgproto=6; ;;
-		c) nocurlprotoforce=1 ;;
-		a) wgoverride=1 ;;
 		s) status=1 ;;
 		t) trace=1 ;;
 		h) help_page 0 ;;
@@ -47,13 +43,10 @@ do
 done
 
 # If user is okay with forcing IP protocol on curl, we do so
-if [ "$nocurlprotoforce" != "1" ]
-then
-	case "$wgproto" in
-		4) curlopts+=( --ipv4 ); ;;
-		6) curlopts+=( --ipv6 ); ;;
-	esac
-fi
+case "$wgproto" in
+	4) curlopts+=( --ipv4 ); ;;
+	6) curlopts+=( --ipv6 ); ;;
+esac
 
 # If requested, we show trace after all options have been parsed
 [ "$trace" = "1" ] && show_trace 0
@@ -86,18 +79,9 @@ fi
 curl "${curlopts[@]}" --header 'Content-Type: application/json' --header "Authorization: Bearer ${auth[1]}" \
 	--request "PATCH" --data '{"warp_enabled":true}' "${warp_apiurl}/reg/${auth[0]}" >/dev/null 2>&1
 
-# Change endpoint to v4 or v6 if the user requested it
-if [ "$wgoverride" != 1 ]
-then
-	case "$wgproto" in
-		4) wg="v4" ;;
-		6) wg="v6" ;;
-	esac
-fi
-
 # Load up variables for Wireguard templace with customized Endpoint based on user's choice
 # shellcheck disable=SC2207
-cfg=( $(jq -r '.config|(.peers[0]|.public_key+" "+.endpoint.'$wg')+" "+.interface.addresses.v4+" "+.interface.addresses.v6' <<<"$reg") )
+cfg=( $(jq -r '.config|(.peers[0]|.public_key+" "+.endpoint.host)+" "+.interface.addresses.v4+" "+.interface.addresses.v6' <<<"$reg") )
 
 # Write WARP Wireguard config and quit
 cat > "$warp_configfile" <<-EOF
