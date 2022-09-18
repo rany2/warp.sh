@@ -5,7 +5,7 @@ By using this you agree to Cloudflare's ToS: https://www.cloudflare.com/applicat
 ## Quick Guide
 
 Make sure to have `jq`, `curl`, and `wireguard-tools` (for `wg genkey` and `wg pubkey`) installed
-before using this bash script.  
+before using this shell script.  
 
 ```shell
 git clone https://github.com/rany2/warp.sh.git
