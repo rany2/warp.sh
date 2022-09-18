@@ -2,20 +2,24 @@
 
 # Safety options and API paths
 set -euf
-warp_sourcefile="warp.source"
-warp_configfile="warp.conf"
-warp_apiurl='https://api.cloudflareclient.com/v0a1922'
+warp_apiurl='https://api.cloudflareclient.com/v0a2483'
 
 # Default variables that can be modified by user's options
 wgproto=0; status=0; trace=0
 
-# Setup headers, ciphers, and user agent to appear to be Android app
-curlopts=( --header 'User-Agent: okhttp/3.12.1' --header 'Accept: application/json' --silent --compressed --tls-max 1.2 )
-curlopts+=( --ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-CCM:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-CCM:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:AES256-GCM-SHA384:AES256-CCM:AES128-GCM-SHA256:AES128-CCM:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES256-CCM:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-CCM:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA' )
+# Setup headers, user agent and compression to appear to be the Android app
+curlopts=(
+	--header 'User-Agent: okhttp/3.12.1'
+	--header 'CF-Client-Version: a-6.16-2483'
+	--header 'Accept: application/json; charset=UTF-8'
+	--silent
+	--compressed
+	--fail
+)
 
 # Functions for options
-show_trace() { curl "${curlopts[@]}" "https://cloudflare.com/cdn-cgi/trace"; exit "$1"; }
-help_page() { cat <<-EOF
+show_trace() { curl "${curlopts[@]}" "https://www.cloudflare.com/cdn-cgi/trace"; exit "$1"; }
+help_page() { cat >&2 <<-EOF
 
 	Usage $0 [options]
 	  -4  use ipv4 for curl
@@ -51,40 +55,24 @@ esac
 # If requested, we show trace after all options have been parsed
 [ "$trace" = "1" ] && show_trace 0
 
-# If source file present, we don't register another time
-if [ -f "$warp_sourcefile" ]
-then
-	# shellcheck disable=SC1090
-	source "$warp_sourcefile"
-	reg="$(curl "${curlopts[@]}" --header "Authorization: Bearer ${auth[1]}" "${warp_apiurl}/reg/${auth[0]}")"
-else
-	priv="$(wg genkey)"
-	publ="$(wg pubkey <<<"$priv")"
-	reg="$(curl "${curlopts[@]}" --header 'Content-Type: application/json' --request "POST" --data '{"install_id":"","tos":"'"$(date -u +%FT%T.000Z)"'","key":"'"${publ}"'","fcm_token":"","type":"Android","locale":"en_US"}' \
-		"${warp_apiurl}/reg")"
-	# shellcheck disable=SC2207
-	auth=( $(jq -r '.id+" "+.token' <<<"$reg") )
-	cat > "$warp_sourcefile" <<-EOF
-		priv=$priv
-		publ=$publ
-		auth[0]=${auth[0]}
-		auth[1]=${auth[1]}
-	EOF
-fi
+# Register a new account
+priv="$(wg genkey)"
+publ="$(wg pubkey <<<"$priv")"
+reg="$(curl "${curlopts[@]}" --header 'Content-Type: application/json' --request "POST" \
+	--data '{"key":"'"${publ}"'","install_id":"","fcm_token":"","model":"","serial_number":"","locale":"en_US"}' \
+	"${warp_apiurl}/reg")"
+# shellcheck disable=SC2207
+auth=( $(jq -r '.id+" "+.token' <<<"$reg") )
 
-# Show current config's status if requested
+# Show current config's status if requested and exit
 [ "$status" = 1 ] && { jq <<<"$reg"; exit 0; }
 
-# Send a request to enable WARP
-curl "${curlopts[@]}" --header 'Content-Type: application/json' --header "Authorization: Bearer ${auth[1]}" \
-	--request "PATCH" --data '{"warp_enabled":true}' "${warp_apiurl}/reg/${auth[0]}" >/dev/null 2>&1
-
-# Load up variables for Wireguard templace with customized Endpoint based on user's choice
+# Load up variables for the Wireguard config template
 # shellcheck disable=SC2207
 cfg=( $(jq -r '.config|(.peers[0]|.public_key+" "+.endpoint.host)+" "+.interface.addresses.v4+" "+.interface.addresses.v6' <<<"$reg") )
 
 # Write WARP Wireguard config and quit
-cat > "$warp_configfile" <<-EOF
+cat <<-EOF
 	[Interface]
 	PrivateKey = ${priv}
 	Address = ${cfg[2]}/32
