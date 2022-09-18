@@ -1,24 +1,28 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # Safety options and API paths
 set -euf
 warp_apiurl='https://api.cloudflareclient.com/v0a2483'
 
 # Default variables that can be modified by user's options
-wgproto=0; status=0; trace=0
+wgproto=0; status=0; trace=0; curlopts=
 
-# Setup headers, user agent and compression to appear to be the Android app
-curlopts=(
-	--header 'User-Agent: okhttp/3.12.1'
-	--header 'CF-Client-Version: a-6.16-2483'
-	--header 'Accept: application/json; charset=UTF-8'
-	--silent
-	--compressed
-	--fail
-)
+cfcurl() {
+	# We need word splitting for $curlopts
+	# shellcheck disable=SC2086
+	curl \
+		--header 'User-Agent: okhttp/3.12.1' \
+		--header 'CF-Client-Version: a-6.16-2483' \
+		--header 'Accept: application/json; charset=UTF-8' \
+		--silent \
+		--compressed \
+		--fail \
+		$curlopts \
+		"$@"
+}
 
 # Functions for options
-show_trace() { curl "${curlopts[@]}" "https://www.cloudflare.com/cdn-cgi/trace"; exit "$1"; }
+show_trace() { cfcurl "https://www.cloudflare.com/cdn-cgi/trace"; exit "$1"; }
 help_page() { cat >&2 <<-EOF
 
 	Usage $0 [options]
@@ -48,8 +52,8 @@ done
 
 # If user is okay with forcing IP protocol on curl, we do so
 case "$wgproto" in
-	4) curlopts+=( --ipv4 ); ;;
-	6) curlopts+=( --ipv6 ); ;;
+	4) curlopts="$curlopts "'--ipv4'; ;;
+	6) curlopts="$curlopts "'--ipv6'; ;;
 esac
 
 # If requested, we show trace after all options have been parsed
@@ -57,33 +61,34 @@ esac
 
 # Register a new account
 priv="$(wg genkey)"
-publ="$(wg pubkey <<<"$priv")"
-reg="$(curl "${curlopts[@]}" --header 'Content-Type: application/json' --request "POST" \
+publ="$(printf %s "$priv" | wg pubkey)"
+reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" \
 	--data '{"key":"'"${publ}"'","install_id":"","fcm_token":"","model":"","serial_number":"","locale":"en_US"}' \
 	"${warp_apiurl}/reg")"
-# shellcheck disable=SC2207
-auth=( $(jq -r '.id+" "+.token' <<<"$reg") )
 
 # Show current config's status if requested and exit
-[ "$status" = 1 ] && { jq <<<"$reg"; exit 0; }
+[ "$status" = 1 ] && { printf %s "$reg" | jq; exit 0; }
 
 # Load up variables for the Wireguard config template
-# shellcheck disable=SC2207
-cfg=( $(jq -r '.config|(.peers[0]|.public_key+" "+.endpoint.host)+" "+.interface.addresses.v4+" "+.interface.addresses.v6' <<<"$reg") )
+cfg=$(printf %s "$reg" | jq -r '.config|(.peers[0]|.public_key+"\n"+.endpoint.host)+"\n"+.interface.addresses.v4+"\n"+.interface.addresses.v6')
+addr4=$(printf %s "$cfg" | head -n3 | tail -1)
+addr6=$(printf %s "$cfg" | head -n4 | tail -1)
+pubkey=$(printf %s "$cfg" | head -n1)
+endpoint=$(printf %s "$cfg" | head -n2 | tail -1)
 
 # Write WARP Wireguard config and quit
 cat <<-EOF
 	[Interface]
 	PrivateKey = ${priv}
-	Address = ${cfg[2]}/32
-	Address = ${cfg[3]}/128
+	Address = ${addr4}/32
+	Address = ${addr6}/128
 	DNS = 1.1.1.1
 	MTU = 1280
 
 	[Peer]
-	PublicKey = ${cfg[0]}
+	PublicKey = ${pubkey}
 	AllowedIPs = 0.0.0.0/0
 	AllowedIPs = ::/0
-	Endpoint = ${cfg[1]}
+	Endpoint = ${endpoint}
 EOF
 exit 0
