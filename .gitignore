@@ -1,8 +1,1 @@
-**
-!warp.sh
-!README.md
-!.gitignore
-!LICENSE.txt
-!clean.sh
-!nm-automate.sh
-!mobile-wg-import.sh
+warp.conf
