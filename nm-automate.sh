@@ -3,7 +3,7 @@
 # Helper script to generate warp config and import
 # it to NetworkManager (it will autoconnect by default)
 
-echo "* Generated Cloudflare WARP config to warp.conf"
+echo "* Generating Cloudflare WARP config to warp.conf"
 ./warp.sh > warp.conf
 echo "* Removing old WARP config from NetworkManager"
 nmcli connection delete warp
