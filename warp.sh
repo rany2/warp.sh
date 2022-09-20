@@ -83,6 +83,9 @@ cat <<-EOF
 	Address = ${addr4}/32
 	Address = ${addr6}/128
 	DNS = 1.1.1.1
+	DNS = 1.0.0.1
+	DNS = 2606:4700:4700::1111
+	DNS = 2606:4700:4700::1001
 	MTU = 1280
 
 	[Peer]
