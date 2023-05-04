@@ -5,7 +5,7 @@ set -euf
 warp_apiurl='https://api.cloudflareclient.com/v0a2483'
 
 # Default variables that can be modified by user's options
-wgproto=0; status=0; trace=0; curlopts=
+wgproto=0; status=0; trace=0; teams=; curlopts=
 
 cfcurl() {
 	# We need word splitting for $curlopts
@@ -33,6 +33,7 @@ help_page() { cat >&2 <<-EOF
 	  -s  show status and exit only
 	  -t  show cloudflare trace and exit only
 	  -h  show this help page and exit only
+	  -T  teams JWT token (visit https://<teams id>.cloudflareaccess.com/warp and find JWT token after auth)
 
 	EOF
 
@@ -40,13 +41,14 @@ help_page() { cat >&2 <<-EOF
 }
 
 # Parse options
-while getopts "h46acst" opt
+while getopts "h46acstT:" opt
 do
 	case "$opt" in
 		4) wgproto=4; ;;
 		6) wgproto=6; ;;
 		s) status=1 ;;
 		t) trace=1 ;;
+		T) teams="$OPTARG" ;;
 		h) help_page 0 ;;
 		*) help_page 1 ;;
 	esac
@@ -64,7 +66,7 @@ esac
 # Register a new account
 priv="$(wg genkey)"
 publ="$(printf %s "$priv" | wg pubkey)"
-reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" \
+reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --header 'CF-Access-Jwt-Assertion: '"$teams" \
 	--data '{"key":"'"${publ}"'","install_id":"","fcm_token":"","model":"","serial_number":"","locale":"en_US"}' \
 	"${warp_apiurl}/reg")"
 
@@ -72,11 +74,14 @@ reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" \
 [ "$status" = 1 ] && { printf %s "$reg" | jq; exit 0; }
 
 # Load up variables for the Wireguard config template
-cfg=$(printf %s "$reg" | jq -r '.config|(.peers[0]|.public_key+"\n"+.endpoint.host)+"\n"+.interface.addresses.v4+"\n"+.interface.addresses.v6')
-addr4=$(printf %s "$cfg" | head -n3 | tail -1)
-addr6=$(printf %s "$cfg" | head -n4 | tail -1)
+cfg=$(printf %s "$reg" | jq -r '.config|(.peers[0]|.public_key+"\n"+.endpoint.host+"\n"+.endpoint.v4+"\n"+.endpoint.v6)+"\n"+.interface.addresses.v4+"\n"+.interface.addresses.v6')
+addr4=$(printf %s "$cfg" | head -n5 | tail -1)
+addr6=$(printf %s "$cfg" | head -n6 | tail -1)
 pubkey=$(printf %s "$cfg" | head -n1)
 endpoint=$(printf %s "$cfg" | head -n2 | tail -1)
+endpointhostport=$(printf %s "$endpoint" | cut -d: -f2)
+endpoint4=$(printf %s "$cfg" | head -n3 | tail -1 | rev | cut -d: -f2 | rev)":$endpointhostport"
+endpoint6=$(printf %s "$cfg" | head -n4 | tail -1 | rev | cut -d: -f2- | rev)":$endpointhostport"
 
 # Write WARP Wireguard config and quit
 cat <<-EOF
@@ -95,5 +100,7 @@ cat <<-EOF
 	AllowedIPs = 0.0.0.0/0
 	AllowedIPs = ::/0
 	Endpoint = ${endpoint}
+	#Endpoint = ${endpoint4}
+	#Endpoint = ${endpoint6}
 EOF
 exit 0
