@@ -1,6 +1,6 @@
 #!/bin/sh
 
 # Android Wireguard Helper script
-# For use with the offical Wireguard app
+# For use with the official Wireguard app
 
-./warp.sh | qrencode -t ansiutf8
+./warp.sh "$@" | qrencode -t ansiutf8
