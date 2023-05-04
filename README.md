@@ -23,8 +23,8 @@ Usage ./warp.sh [options]
   -6  use ipv6 for curl
   -s  show status and exit only
   -t  show cloudflare trace and exit only
-  -h  show this help page and exit only
   -T  teams JWT token (visit https://<teams id>.cloudflareaccess.com/warp and find JWT token after auth)
+  -h  show this help page and exit only
 
 Regarding Teams enrollment:
   1. Visit https://<teams id>.cloudflareaccess.com/warp
