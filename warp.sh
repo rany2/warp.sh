@@ -7,7 +7,7 @@ set -f # Disable globbing
 
 # Constants
 BASE_URL='https://api.cloudflareclient.com/v0a2483'
-DEPENDENCIES="curl jq head tail wc printf cat"
+DEPENDENCIES="curl jq head tail printf cat"
 
 # Validate dependencies are installed
 exit_with_error=0
@@ -50,12 +50,6 @@ cfcurl() {
 strip_port() {
 	IFS= read -r str
 	printf '%s' "${str%:*}"
-}
-
-# Print error message and exit
-die() {
-	printf 'Error: %s\n' "$*" >&2
-	exit 1
 }
 
 # Functions for options
@@ -117,22 +111,29 @@ reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --heade
 
 # Load up variables for the Wireguard config template
 cfg=$(printf %s "${reg}" | jq -r '.config|(.peers[0]|.public_key+"\n"+.endpoint.v4+"\n"+.endpoint.v6)+"\n"+.interface.addresses.v4+"\n"+.interface.addresses.v6')
-# Validate that cfg has 5 lines total
-if [ "$(printf '%s\n' "${cfg}" | wc -l)" != 5 ]; then
-	die "Error: Fields were missing from the API response." >&2
-fi
+cfcreds=$(printf %s "${reg}" | jq -r '.id+"\n"+.account.id+"\n"+.account.license+"\n"+.token')
 addr4=$(printf %s "${cfg}" | head -4 | tail -1)
-addr6=$(printf %s "${cfg}" | head -5 | tail -1)
+addr6=$(printf %s "${cfg}" | tail -1)
 pubkey=$(printf %s "${cfg}" | head -1)
 endpointhostport=2408
 endpoint4=$(printf %s "${cfg}" | head -2 | tail -1 | strip_port)":${endpointhostport}"
 endpoint6=$(printf %s "${cfg}" | head -3 | tail -1 | strip_port)":${endpointhostport}"
+cfdeviceid=$(printf %s "${cfcreds}" | head -1)
+cfaccountid=$(printf %s "${cfcreds}" | head -2 | tail -1)
+cflicense=$(printf %s "${cfcreds}" | head -3 | tail -1)
+[ -z "${cflicense}" ] && [ -n "${teams}" ] && cflicense="N/A"
+cftoken=$(printf %s "${cfcreds}" | head -4 | tail -1)
 
 # Write WARP Wireguard config and quit
 cat <<-EOF
 	[Interface]
 	PrivateKey = ${priv}
+	#PublicKey = ${publ}
 	Address = ${addr4}/32, ${addr6}/128
+	#CFDeviceId = ${cfdeviceid}
+	#CFAccountId = ${cfaccountid}
+	#CFLicense = ${cflicense}
+	#CFToken = ${cftoken}
 	DNS = 1.1.1.1, 1.0.0.1, 2606:4700:4700::1111, 2606:4700:4700::1001
 	MTU = 1280
 
