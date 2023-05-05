@@ -95,29 +95,14 @@ endpoint6=$(printf %s "$cfg" | head -n4 | tail -1 | rev | cut -d: -f2- | rev)":$
 cat <<-EOF
 	[Interface]
 	PrivateKey = ${priv}
-	#PublicKey = ${publ}
 	Address = ${addr4}/32, ${addr6}/128
 	DNS = 1.1.1.1, 1.0.0.1, 2606:4700:4700::1111, 2606:4700:4700::1001
-	# This may be increased depending on your connection however the official client
-	# uses 1280 even if your connection has an MTU greater than 1220 (IPv4) or 1240 (IPv6).
-	#
-	# To calculate the overhead, subtract 40 bytes from your MTU if your connection will
-	# use IPv4 for sure or 60 bytes if you will connect over IPv6.
 	MTU = 1280
 
-	# If you selected a Teams account, use ${endpoint4} or ${endpoint6}.
-	# ${endpoint} seems to be set to engage.cloudflareclient.com in API response but
-	# the official client only uses those that are selected in ${endpoint4} or ${endpoint6}
-	#
-	# If the UDP port 2408 is blocked, you may select one of the other ports
-	# mentioned in https://developers.cloudflare.com/cloudflare-one/connections/connect-devices/warp/deployment/firewall/#warp-udp-ports
-	# While the above documentation is for Teams only, it applies to unregistered as well.
 	[Peer]
 	PublicKey = ${pubkey}
-	AllowedIPs = 0.0.0.0/0
-	AllowedIPs = ::/0
-	Endpoint = ${endpoint}
-	#Endpoint = ${endpoint4}
+	AllowedIPs = 0.0.0.0/0, ::/0
+	Endpoint = ${endpoint4}
 	#Endpoint = ${endpoint6}
 EOF
 exit 0
