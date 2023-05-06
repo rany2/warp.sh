@@ -11,13 +11,13 @@ DEPENDENCIES="curl jq head tail printf cat"
 
 # Validate dependencies are installed
 exit_with_error=0
-for dep in $DEPENDENCIES; do
-	if ! command -v "$dep" >/dev/null 2>&1; then
-		echo "Error: $dep is not installed." >&2
+for dep in ${DEPENDENCIES}; do
+	if ! command -v "${dep}" >/dev/null 2>&1; then
+		echo "Error: ${dep} is not installed." >&2
 		exit_with_error=1
 	fi
 done
-[  $exit_with_error -eq 1 ] && exit 1
+[ "${exit_with_error}" -eq 1 ] && exit 1
 
 # Initialize variables that are settable by the user
 curlopts=
@@ -79,7 +79,7 @@ help_page() { cat >&2 <<-EOF
 # Parse options
 while getopts "h46acstT:" opt
 do
-	case "$opt" in
+	case "${opt}" in
 		4) wgproto=4; ;;
 		6) wgproto=6; ;;
 		s) show_regonly=1 ;;
@@ -91,13 +91,14 @@ do
 done
 
 # If user is okay with forcing IP protocol on curl, we do so
-case "$wgproto" in
+case "${wgproto}" in
 	4) curlopts="${curlopts} "'--ipv4'; ;;
 	6) curlopts="${curlopts} "'--ipv6'; ;;
+	*) exit 1 ;;
 esac
 
 # If requested, we show trace after all options have been parsed
-[ "$trace" = "1" ] && show_trace 0
+[ "${trace}" -eq 1 ] && show_trace 0
 
 # Register a new account
 priv="$(wg genkey)"
