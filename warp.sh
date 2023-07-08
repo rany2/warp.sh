@@ -94,7 +94,7 @@ done
 case "${wgproto}" in
 	4) curlopts="${curlopts} "'--ipv4'; ;;
 	6) curlopts="${curlopts} "'--ipv6'; ;;
-	*) exit 1 ;;
+	*) ;;
 esac
 
 # If requested, we show trace after all options have been parsed
