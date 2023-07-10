@@ -67,7 +67,7 @@ help_page() { cat >&2 <<-EOF
 	  1. Visit https://<teams id>.cloudflareaccess.com/warp
 	  2. Authenticate yourself as you would with the official client
 	  3. Check the source code of the page for the JWT token or use the following code in the "Web Console" (Ctrl+Shift+K):
-	  	  console.log(document.querySelector("meta[http-equiv='refresh']").content.slice(64))
+	  	  console.log(document.querySelector("meta[http-equiv='refresh']").content.split("=")[2])
 	  4. Pass the output as the value for the parameter -T. The final command will look like:
 	  	  ${0} -T eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.....
 
