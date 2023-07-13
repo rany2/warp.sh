@@ -27,7 +27,7 @@ Usage ./warp.sh [options]
 ```
 
 ### Regarding Teams enrollment:
-  1. Visit https://<teams id>.cloudflareaccess.com/warp
+  1. Visit https://\<teams id>.cloudflareaccess.com/warp
   2. Authenticate yourself as you would with the official client
   3. Check the source code of the page for the JWT token or use the following code in the "Web Console" (Ctrl+Shift+K):
 ```js
