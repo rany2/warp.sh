@@ -111,11 +111,12 @@ reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --heade
 [ "${show_regonly}" = 1 ] && { printf %s "${reg}" | jq; exit 0; }
 
 # Load up variables for the Wireguard config template
-cfg=$(printf %s "${reg}" | jq -r '.config|(.peers[0]|.public_key+"\n"+.endpoint.v4+"\n"+.endpoint.v6)+"\n"+.interface.addresses.v4+"\n"+.interface.addresses.v6')
+cfg=$(printf %s "${reg}" | jq -r '.config|(.peers[0]|.public_key+"\n"+.endpoint.v4+"\n"+.endpoint.v6)+"\n"+.interface.addresses.v4+"\n"+.interface.addresses.v6+"\n"+.client_id')
 cfcreds=$(printf %s "${reg}" | jq -r '.id+"\n"+.account.id+"\n"+.account.license+"\n"+.token')
 addr4=$(printf %s "${cfg}" | head -4 | tail -1)
-addr6=$(printf %s "${cfg}" | tail -1)
+addr6=$(printf %s "${cfg}" | head -5 | tail -1)
 pubkey=$(printf %s "${cfg}" | head -1)
+cfclientid=$(printf %s "${cfg}" | tail -1)
 endpointhostport=2408
 endpoint4=$(printf %s "${cfg}" | head -2 | tail -1 | strip_port)":${endpointhostport}"
 endpoint6=$(printf %s "${cfg}" | head -3 | tail -1 | strip_port)":${endpointhostport}"
@@ -135,6 +136,7 @@ cat <<-EOF
 	#CFAccountId = ${cfaccountid}
 	#CFLicense = ${cflicense}
 	#CFToken = ${cftoken}
+	#CFClientId = ${cfclientid}
 	DNS = 1.1.1.1, 1.0.0.1, 2606:4700:4700::1111, 2606:4700:4700::1001
 	MTU = 1280
 
