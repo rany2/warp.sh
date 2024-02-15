@@ -131,7 +131,7 @@ cat <<-EOF
 	[Interface]
 	PrivateKey = ${priv}
 	#PublicKey = ${publ}
-	Address = ${addr4}/32, ${addr6}/128
+	Address = ${addr4}, ${addr6}
 	#CFDeviceId = ${cfdeviceid}
 	#CFAccountId = ${cfaccountid}
 	#CFLicense = ${cflicense}
