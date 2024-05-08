@@ -2,7 +2,7 @@
 
 By using this you agree to Cloudflare's ToS: https://www.cloudflare.com/application/terms/  
 
-## Quick Guide
+## Quick Guide #1
 
 Make sure to have `jq`, `curl`, and `wireguard-tools` (for `wg genkey` and `wg pubkey`) installed
 before using this shell script.  
@@ -13,7 +13,17 @@ cd warp.sh
 ./warp.sh
 ```
 
-The generated wireguard config will be printed to stdout.  
+The generated wireguard config will be printed to stdout.
+
+## Quick Guide #2
+
+To execute this script on GitHub Codespaces without the need to set up a local environment, follow these steps:
+
+1. Open the repository and locate the green buttons. Click on "Code" then select "Codespaces" and finally choose "Create codespace on master".
+2. Wait for the codespace to be created. Once it's ready, open the terminal and run the command `./warp.sh`.
+3. After you've finished using the codespace, it's important to delete it to maintain cleanliness and save resources.
+
+Please note that deleting the codespace will remove all the changes and configurations made within it, so make sure to save any important files or settings before closing.
 
 ## Usage options
 
