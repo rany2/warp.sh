@@ -119,13 +119,15 @@ wg_config=$(printf %s "${reg}" | jq -r '.config|(
 	.endpoint.v6)+"\n"+             # NR==4
 	.interface.addresses.v4+"\n"    # NR==5
 	+.interface.addresses.v6+"\n"+  # NR==6
-	.client_id'                     # NR==7
+	.client_id                      # NR==7
+	'
 )
 cf_creds=$(printf %s "${reg}" | jq -r '
 	.id+"\n"+                       # NR==1
 	.account.id+"\n"+               # NR==2
 	.account.license+"\n"+          # NR==3
-	.token'                         # NR==4
+	.token                          # NR==4
+	'
 )
 endpoint_port=2408
 peer_public_key=$(printf %s "${wg_config}" | awk 'NR==1')
