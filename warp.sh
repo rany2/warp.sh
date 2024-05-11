@@ -7,7 +7,7 @@ set -f # Disable globbing
 
 # Constants
 BASE_URL='https://api.cloudflareclient.com/v0a2483'
-DEPENDENCIES="curl jq head tail printf cat base64 hexdump tr wg"
+DEPENDENCIES="curl jq awk printf cat base64 hexdump wg"
 
 # Validate dependencies are installed
 exit_with_error=0
@@ -113,22 +113,22 @@ reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --heade
 # Load up variables for the Wireguard config template
 cfg=$(printf %s "${reg}" | jq -r '.config|(.peers[0]|.public_key+"\n"+.endpoint.v4+"\n"+.endpoint.v6)+"\n"+.interface.addresses.v4+"\n"+.interface.addresses.v6+"\n"+.client_id')
 cfcreds=$(printf %s "${reg}" | jq -r '.id+"\n"+.account.id+"\n"+.account.license+"\n"+.token')
-addr4=$(printf %s "${cfg}" | head -4 | tail -1)
-addr6=$(printf %s "${cfg}" | head -5 | tail -1)
-pubkey=$(printf %s "${cfg}" | head -1)
-cfclientidb64=$(printf %s "${cfg}" | tail -1)
-cfclientidhex=$(printf %s "${cfclientidb64}" | base64 -d | hexdump -e '1/1 "%02x\n"')
+addr4=$(printf %s "${cfg}" | awk 'NR==4')
+addr6=$(printf %s "${cfg}" | awk 'NR==5')
+pubkey=$(printf %s "${cfg}" | awk 'NR==1')
+cfclientidb64=$(printf %s "${cfg}" | awk 'NR==6')
+cfclientidhex=$(printf %s "${cfclientidb64}" | base64 -d | hexdump -v -e '/1 "%02x\n"')
 cfclientiddec=$(printf '%s\n' "${cfclientidhex}" | while read -r hex; do printf "%d, " "0x${hex}"; done)
 cfclientiddec="[${cfclientiddec%, }]" # Remove trailing comma and space and add brackets
-cfclientidhex=0x$(printf %s "${cfclientidhex}" | tr -d '\n')  # Remove newlines and add 0x prefix
+cfclientidhex=$(printf %s "${cfclientidhex}" | awk 'BEGIN { ORS=""; print "0x" } { print }') # Add 0x prefix and remove newline
 endpointhostport=2408
-endpoint4=$(printf %s "${cfg}" | head -2 | tail -1 | strip_port)":${endpointhostport}"
-endpoint6=$(printf %s "${cfg}" | head -3 | tail -1 | strip_port)":${endpointhostport}"
-cfdeviceid=$(printf %s "${cfcreds}" | head -1)
-cfaccountid=$(printf %s "${cfcreds}" | head -2 | tail -1)
-cflicense=$(printf %s "${cfcreds}" | head -3 | tail -1)
+endpoint4=$(printf %s "${cfg}" | awk 'NR==2' | strip_port)":${endpointhostport}"
+endpoint6=$(printf %s "${cfg}" | awk 'NR==3' | strip_port)":${endpointhostport}"
+cfdeviceid=$(printf %s "${cfcreds}" | awk 'NR==1')
+cfaccountid=$(printf %s "${cfcreds}" | awk 'NR==2')
+cflicense=$(printf %s "${cfcreds}" | awk 'NR==3')
 [ -z "${cflicense}" ] && [ -n "${teams}" ] && cflicense="N/A"
-cftoken=$(printf %s "${cfcreds}" | head -4 | tail -1)
+cftoken=$(printf %s "${cfcreds}" | awk 'NR==4')
 
 # Write WARP Wireguard config and quit
 cat <<-EOF
