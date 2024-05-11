@@ -58,7 +58,6 @@ print_separator() {
 }
 
 # Functions for options
-show_trace() { cfcurl "https://www.cloudflare.com/cdn-cgi/trace"; exit "$1"; }
 help_page() { cat >&2 <<-EOF
 
 	Usage $0 [options]
@@ -103,7 +102,10 @@ case "${curl_ip_protocol}" in
 esac
 
 # If requested, we show trace after all options have been parsed
-[ "${trace}" -eq 1 ] && show_trace 0
+if [ "${trace}" -eq 1 ]; then
+	cfcurl "https://www.cloudflare.com/cdn-cgi/trace"
+	exit 0
+fi
 
 # Register a new account
 wg_private_key="$(wg genkey)"
