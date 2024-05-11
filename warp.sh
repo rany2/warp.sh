@@ -7,7 +7,7 @@ set -f # Disable globbing
 
 # Constants
 BASE_URL='https://api.cloudflareclient.com/v0a2483'
-DEPENDENCIES="curl jq head tail printf cat base64 hexdump tr"
+DEPENDENCIES="curl jq head tail printf cat base64 hexdump tr wg"
 
 # Validate dependencies are installed
 exit_with_error=0
