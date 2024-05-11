@@ -119,7 +119,7 @@ if [ "${show_regonly}" -eq 1 ]; then
 	print_separator
 fi
 
-# Load up variables for the Wireguard config template
+# Extract Wireguard details from registration response
 wg_config=$(printf %s "${reg}" | jq -r '.config|(
 	.peers[0]|
 	.public_key+"\n"+               # NR==1
@@ -129,13 +129,6 @@ wg_config=$(printf %s "${reg}" | jq -r '.config|(
 	.interface.addresses.v4+"\n"    # NR==5
 	+.interface.addresses.v6+"\n"+  # NR==6
 	.client_id                      # NR==7
-	'
-)
-cf_creds=$(printf %s "${reg}" | jq -r '
-	.id+"\n"+                       # NR==1
-	.account.id+"\n"+               # NR==2
-	.account.license+"\n"+          # NR==3
-	.token                          # NR==4
 	'
 )
 endpoint_port=2408
@@ -148,8 +141,19 @@ address_ipv6=$(printf %s "${wg_config}" | awk 'NR==6')
 client_id_b64=$(printf %s "${wg_config}" | awk 'NR==7')
 client_id_hex=$(printf %s "${client_id_b64}" | base64 -d | hexdump -v -e '/1 "%02x\n"')
 client_id_dec=$(printf '%s\n' "${client_id_hex}" | while read -r hex; do printf "%d, " "0x${hex}"; done)
-client_id_dec="[${client_id_dec%, }]" # Remove trailing comma and space and add brackets
-client_id_hex=$(printf %s "${client_id_hex}" | awk 'BEGIN { ORS=""; print "0x" } { print }') # Add 0x prefix and remove newline
+## Add brackets and remove trailing comma and space
+client_id_dec="[${client_id_dec%, }]"
+## Add 0x prefix and remove newline
+client_id_hex=$(printf %s "${client_id_hex}" | awk 'BEGIN { ORS=""; print "0x" } { print }')
+
+# Extract Cloudflare credentials from registration response
+cf_creds=$(printf %s "${reg}" | jq -r '
+	.id+"\n"+                       # NR==1
+	.account.id+"\n"+               # NR==2
+	.account.license+"\n"+          # NR==3
+	.token                          # NR==4
+	'
+)
 device_id=$(printf %s "${cf_creds}" | awk 'NR==1')
 account_id=$(printf %s "${cf_creds}" | awk 'NR==2')
 account_license=$(printf %s "${cf_creds}" | awk 'NR==3')
