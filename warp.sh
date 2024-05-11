@@ -20,11 +20,11 @@ done
 [ "${exit_with_error}" -eq 1 ] && exit 1
 
 # Initialize variables that are settable by the user
+cf_trace=0
+curl_ip_protocol=0
 curl_opts=
 show_regonly=0
 teams_ephemeral_token=
-trace=0
-curl_ip_protocol=0
 
 # Helper function to send traffic to Cloudflare API without
 # tripping up their TLS fingerprinting mechanism and triggering
@@ -86,7 +86,7 @@ while getopts "46stT:h" opt; do
 		4) curl_ip_protocol=4 ;;
 		6) curl_ip_protocol=6 ;;
 		s) show_regonly=1 ;;
-		t) trace=1 ;;
+		t) cf_trace=1 ;;
 		T) teams_ephemeral_token="${OPTARG}" ;;
 		h) help_page 0 ;;
 		*) help_page 1 ;;
@@ -101,7 +101,7 @@ case "${curl_ip_protocol}" in
 esac
 
 # If requested, we show trace after all options have been parsed
-if [ "${trace}" -eq 1 ]; then
+if [ "${cf_trace}" -eq 1 ]; then
 	cfcurl "https://www.cloudflare.com/cdn-cgi/trace"
 	exit 0
 fi
