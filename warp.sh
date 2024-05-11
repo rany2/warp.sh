@@ -126,17 +126,17 @@ cfcreds=$(printf %s "${reg}" | jq -r '
 	.account.license+"\n"+          # NR==3
 	.token'                         # NR==4
 )
+endpointhostport=2408
+pubkey=$(printf %s "${cfg}" | awk 'NR==1')
+endpoint4=$(printf %s "${cfg}" | awk 'NR==2' | strip_port)":${endpointhostport}"
+endpoint6=$(printf %s "${cfg}" | awk 'NR==3' | strip_port)":${endpointhostport}"
 addr4=$(printf %s "${cfg}" | awk 'NR==4')
 addr6=$(printf %s "${cfg}" | awk 'NR==5')
-pubkey=$(printf %s "${cfg}" | awk 'NR==1')
 cfclientidb64=$(printf %s "${cfg}" | awk 'NR==6')
 cfclientidhex=$(printf %s "${cfclientidb64}" | base64 -d | hexdump -v -e '/1 "%02x\n"')
 cfclientiddec=$(printf '%s\n' "${cfclientidhex}" | while read -r hex; do printf "%d, " "0x${hex}"; done)
 cfclientiddec="[${cfclientiddec%, }]" # Remove trailing comma and space and add brackets
 cfclientidhex=$(printf %s "${cfclientidhex}" | awk 'BEGIN { ORS=""; print "0x" } { print }') # Add 0x prefix and remove newline
-endpointhostport=2408
-endpoint4=$(printf %s "${cfg}" | awk 'NR==2' | strip_port)":${endpointhostport}"
-endpoint6=$(printf %s "${cfg}" | awk 'NR==3' | strip_port)":${endpointhostport}"
 cfdeviceid=$(printf %s "${cfcreds}" | awk 'NR==1')
 cfaccountid=$(printf %s "${cfcreds}" | awk 'NR==2')
 cflicense=$(printf %s "${cfcreds}" | awk 'NR==3')
