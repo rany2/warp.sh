@@ -81,11 +81,10 @@ help_page() { cat >&2 <<-EOF
 }
 
 # Parse options
-while getopts "h46acstT:" opt
-do
+while getopts "46stT:h" opt; do
 	case "${opt}" in
-		4) curl_ip_protocol=4; ;;
-		6) curl_ip_protocol=6; ;;
+		4) curl_ip_protocol=4 ;;
+		6) curl_ip_protocol=6 ;;
 		s) show_regonly=1 ;;
 		t) trace=1 ;;
 		T) teams_ephemeral_token="${OPTARG}" ;;
