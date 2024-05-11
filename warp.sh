@@ -52,6 +52,11 @@ strip_port() {
 	printf '%s' "${str%:*}"
 }
 
+# Print separator for better readability
+print_separator() {
+	printf '%s\n' '----------------------------------------' >&2
+}
+
 # Functions for options
 show_trace() { cfcurl "https://www.cloudflare.com/cdn-cgi/trace"; exit "$1"; }
 help_page() { cat >&2 <<-EOF
@@ -107,8 +112,11 @@ reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --heade
 	--data '{"key":"'"${wg_public_key}"'","install_id":"","fcm_token":"","model":"","serial_number":"","locale":"en_US"}' \
 	"${BASE_URL}/reg")"
 
-# DEBUG: Show registration response and exit
-[ "${show_regonly}" = 1 ] && { printf %s "${reg}" | jq; exit 0; }
+# DEBUG: Show registration response
+if [ "${show_regonly}" -eq 1 ]; then
+	printf '%s\n' "${reg}" | jq
+	print_separator
+fi
 
 # Load up variables for the Wireguard config template
 wg_config=$(printf %s "${reg}" | jq -r '.config|(
