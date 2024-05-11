@@ -143,8 +143,12 @@ client_id_dec="[${client_id_dec%, }]" # Remove trailing comma and space and add 
 client_id_hex=$(printf %s "${client_id_hex}" | awk 'BEGIN { ORS=""; print "0x" } { print }') # Add 0x prefix and remove newline
 device_id=$(printf %s "${cf_creds}" | awk 'NR==1')
 account_id=$(printf %s "${cf_creds}" | awk 'NR==2')
-license=$(printf %s "${cf_creds}" | awk 'NR==3')
-[ -z "${license}" ] && [ -n "${teams_ephemeral_token}" ] && license="N/A"
+account_license=$(printf %s "${cf_creds}" | awk 'NR==3')
+if [ -z "${account_license}" ] && [ -n "${teams_ephemeral_token}" ]; then
+	account_license="N/A"
+elif [ -z "${account_license}" ]; then
+	account_license="Unknown"
+fi
 token=$(printf %s "${cf_creds}" | awk 'NR==4')
 
 # Write WARP Wireguard config and quit
@@ -159,7 +163,7 @@ cat <<-EOF
 	# Cloudflare Warp specific variables
 	#CFDeviceId = ${device_id}
 	#CFAccountId = ${account_id}
-	#CFLicense = ${license}
+	#CFAccountLicense = ${account_license}
 	#CFToken = ${token}
 	## Cloudflare Client ID in various formats.
 	## NOTE: this is also referred to as "reserved key" as the client ID
