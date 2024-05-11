@@ -7,7 +7,7 @@ set -f # Disable globbing
 
 # Constants
 BASE_URL='https://api.cloudflareclient.com/v0a2483'
-DEPENDENCIES="curl jq head tail printf cat base64 hexdump"
+DEPENDENCIES="curl jq head tail printf cat base64 hexdump tr"
 
 # Validate dependencies are installed
 exit_with_error=0
@@ -117,8 +117,10 @@ addr4=$(printf %s "${cfg}" | head -4 | tail -1)
 addr6=$(printf %s "${cfg}" | head -5 | tail -1)
 pubkey=$(printf %s "${cfg}" | head -1)
 cfclientidb64=$(printf %s "${cfg}" | tail -1)
-cfclientidhex=$(printf %s "${cfclientidb64}" | base64 -d | hexdump -e '1/1 "%02x"')
-cfclientiddec=$(printf '[%d, %d, %d]' 0x"${cfclientidhex:0:2}" 0x"${cfclientidhex:2:2}" 0x"${cfclientidhex:4}")
+cfclientidhex=$(printf %s "${cfclientidb64}" | base64 -d | hexdump -e '1/1 "%02x\n"')
+cfclientiddec=$(printf '%s\n' "${cfclientidhex}" | while read -r hex; do printf "%d, " "0x${hex}"; done)
+cfclientiddec="[${cfclientiddec%, }]" # Remove trailing comma and space and add brackets
+cfclientidhex=0x$(printf %s "${cfclientidhex}" | tr -d '\n')  # Remove newlines and add 0x prefix
 endpointhostport=2408
 endpoint4=$(printf %s "${cfg}" | head -2 | tail -1 | strip_port)":${endpointhostport}"
 endpoint6=$(printf %s "${cfg}" | head -3 | tail -1 | strip_port)":${endpointhostport}"
@@ -146,7 +148,7 @@ cat <<-EOF
 	## NOTE: this is also referred to as "reserved key" as the client ID
 	##       is put in the reserved key field in the WireGuard handshake.
 	#CFClientIdB64 = ${cfclientidb64}
-	#CFClientIdHex = 0x${cfclientidhex}
+	#CFClientIdHex = ${cfclientidhex}
 	#CFClientIdDec = ${cfclientiddec}
 
 	[Peer]
