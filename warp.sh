@@ -22,7 +22,7 @@ done
 # Initialize variables that are settable by the user
 curl_opts=
 show_regonly=0
-teams_token=
+teams_ephemeral_token=
 trace=0
 curl_ip_protocol=0
 
@@ -84,7 +84,7 @@ do
 		6) curl_ip_protocol=6; ;;
 		s) show_regonly=1 ;;
 		t) trace=1 ;;
-		T) teams_token="${OPTARG}" ;;
+		T) teams_ephemeral_token="${OPTARG}" ;;
 		h) help_page 0 ;;
 		*) help_page 1 ;;
 	esac
@@ -103,7 +103,7 @@ esac
 # Register a new account
 wg_private_key="$(wg genkey)"
 wg_public_key="$(printf %s "${wg_private_key}" | wg pubkey)"
-reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --header 'CF-Access-Jwt-Assertion: '"${teams_token}" \
+reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --header 'CF-Access-Jwt-Assertion: '"${teams_ephemeral_token}" \
 	--data '{"key":"'"${wg_public_key}"'","install_id":"","fcm_token":"","model":"","serial_number":"","locale":"en_US"}' \
 	"${BASE_URL}/reg")"
 
@@ -144,7 +144,7 @@ client_id_hex=$(printf %s "${client_id_hex}" | awk 'BEGIN { ORS=""; print "0x" }
 device_id=$(printf %s "${cf_creds}" | awk 'NR==1')
 account_id=$(printf %s "${cf_creds}" | awk 'NR==2')
 license=$(printf %s "${cf_creds}" | awk 'NR==3')
-[ -z "${license}" ] && [ -n "${teams_token}" ] && license="N/A"
+[ -z "${license}" ] && [ -n "${teams_ephemeral_token}" ] && license="N/A"
 token=$(printf %s "${cf_creds}" | awk 'NR==4')
 
 # Write WARP Wireguard config and quit
