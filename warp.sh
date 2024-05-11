@@ -101,17 +101,17 @@ esac
 [ "${trace}" -eq 1 ] && show_trace 0
 
 # Register a new account
-priv="$(wg genkey)"
-publ="$(printf %s "${priv}" | wg pubkey)"
+wg_private_key="$(wg genkey)"
+wg_public_key="$(printf %s "${wg_private_key}" | wg pubkey)"
 reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --header 'CF-Access-Jwt-Assertion: '"${teams}" \
-	--data '{"key":"'"${publ}"'","install_id":"","fcm_token":"","model":"","serial_number":"","locale":"en_US"}' \
+	--data '{"key":"'"${wg_public_key}"'","install_id":"","fcm_token":"","model":"","serial_number":"","locale":"en_US"}' \
 	"${BASE_URL}/reg")"
 
 # DEBUG: Show registration response and exit
 [ "${show_regonly}" = 1 ] && { printf %s "${reg}" | jq; exit 0; }
 
 # Load up variables for the Wireguard config template
-cfg=$(printf %s "${reg}" | jq -r '.config|(
+wg_config=$(printf %s "${reg}" | jq -r '.config|(
 	.peers[0]|
 	.public_key+"\n"+               # NR==1
 	.endpoint.host+"\n"+            # NR==2
@@ -121,58 +121,58 @@ cfg=$(printf %s "${reg}" | jq -r '.config|(
 	+.interface.addresses.v6+"\n"+  # NR==6
 	.client_id'                     # NR==7
 )
-cfcreds=$(printf %s "${reg}" | jq -r '
+cf_creds=$(printf %s "${reg}" | jq -r '
 	.id+"\n"+                       # NR==1
 	.account.id+"\n"+               # NR==2
 	.account.license+"\n"+          # NR==3
 	.token'                         # NR==4
 )
-endpointhostport=2408
-pubkey=$(printf %s "${cfg}" | awk 'NR==1')
-endpoint=$(printf %s "${cfg}" | awk 'NR==2' | strip_port)":${endpointhostport}"
-endpoint4=$(printf %s "${cfg}" | awk 'NR==3' | strip_port)":${endpointhostport}"
-endpoint6=$(printf %s "${cfg}" | awk 'NR==4' | strip_port)":${endpointhostport}"
-addr4=$(printf %s "${cfg}" | awk 'NR==5')
-addr6=$(printf %s "${cfg}" | awk 'NR==6')
-cfclientidb64=$(printf %s "${cfg}" | awk 'NR==7')
-cfclientidhex=$(printf %s "${cfclientidb64}" | base64 -d | hexdump -v -e '/1 "%02x\n"')
-cfclientiddec=$(printf '%s\n' "${cfclientidhex}" | while read -r hex; do printf "%d, " "0x${hex}"; done)
-cfclientiddec="[${cfclientiddec%, }]" # Remove trailing comma and space and add brackets
-cfclientidhex=$(printf %s "${cfclientidhex}" | awk 'BEGIN { ORS=""; print "0x" } { print }') # Add 0x prefix and remove newline
-cfdeviceid=$(printf %s "${cfcreds}" | awk 'NR==1')
-cfaccountid=$(printf %s "${cfcreds}" | awk 'NR==2')
-cflicense=$(printf %s "${cfcreds}" | awk 'NR==3')
-[ -z "${cflicense}" ] && [ -n "${teams}" ] && cflicense="N/A"
-cftoken=$(printf %s "${cfcreds}" | awk 'NR==4')
+endpoint_port=2408
+peer_public_key=$(printf %s "${wg_config}" | awk 'NR==1')
+endpoint_host=$(printf %s "${wg_config}" | awk 'NR==2' | strip_port)":${endpoint_port}"
+endpoint_ipv4=$(printf %s "${wg_config}" | awk 'NR==3' | strip_port)":${endpoint_port}"
+endpoint_ipv6=$(printf %s "${wg_config}" | awk 'NR==4' | strip_port)":${endpoint_port}"
+address_ipv4=$(printf %s "${wg_config}" | awk 'NR==5')
+address_ipv6=$(printf %s "${wg_config}" | awk 'NR==6')
+client_id_b64=$(printf %s "${wg_config}" | awk 'NR==7')
+client_id_hex=$(printf %s "${client_id_b64}" | base64 -d | hexdump -v -e '/1 "%02x\n"')
+client_id_dec=$(printf '%s\n' "${client_id_hex}" | while read -r hex; do printf "%d, " "0x${hex}"; done)
+client_id_dec="[${client_id_dec%, }]" # Remove trailing comma and space and add brackets
+client_id_hex=$(printf %s "${client_id_hex}" | awk 'BEGIN { ORS=""; print "0x" } { print }') # Add 0x prefix and remove newline
+device_id=$(printf %s "${cf_creds}" | awk 'NR==1')
+account_id=$(printf %s "${cf_creds}" | awk 'NR==2')
+license=$(printf %s "${cf_creds}" | awk 'NR==3')
+[ -z "${license}" ] && [ -n "${teams}" ] && license="N/A"
+token=$(printf %s "${cf_creds}" | awk 'NR==4')
 
 # Write WARP Wireguard config and quit
 cat <<-EOF
 	[Interface]
-	PrivateKey = ${priv}
-	#PublicKey = ${publ}
-	Address = ${addr4}, ${addr6}
+	PrivateKey = ${wg_private_key}
+	#PublicKey = ${wg_public_key}
+	Address = ${address_ipv4}, ${address_ipv6}
 	DNS = 1.1.1.1, 1.0.0.1, 2606:4700:4700::1111, 2606:4700:4700::1001
 	MTU = 1280
 
 	# Cloudflare Warp specific variables
-	#CFDeviceId = ${cfdeviceid}
-	#CFAccountId = ${cfaccountid}
-	#CFLicense = ${cflicense}
-	#CFToken = ${cftoken}
+	#CFDeviceId = ${device_id}
+	#CFAccountId = ${account_id}
+	#CFLicense = ${license}
+	#CFToken = ${token}
 	## Cloudflare Client ID in various formats.
 	## NOTE: this is also referred to as "reserved key" as the client ID
 	##       is put in the reserved key field in the WireGuard handshake.
-	#CFClientIdB64 = ${cfclientidb64}
-	#CFClientIdHex = ${cfclientidhex}
-	#CFClientIdDec = ${cfclientiddec}
+	#CFClientIdB64 = ${client_id_b64}
+	#CFClientIdHex = ${client_id_hex}
+	#CFClientIdDec = ${client_id_dec}
 
 	[Peer]
-	PublicKey = ${pubkey}
+	PublicKey = ${peer_public_key}
 	AllowedIPs = 0.0.0.0/0, ::/0
 	PersistentKeepalive = 25
 	# If UDP 2408 is blocked, you could try UDP 500, UDP 1701, or UDP 4500.
-	Endpoint = ${endpoint4}
-	#Endpoint = ${endpoint6}
-	#Endpoint = ${endpoint}
+	Endpoint = ${endpoint_ipv4}
+	#Endpoint = ${endpoint_ipv6}
+	#Endpoint = ${endpoint_host}
 EOF
 exit 0
