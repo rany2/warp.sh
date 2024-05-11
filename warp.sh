@@ -114,11 +114,12 @@ reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --heade
 cfg=$(printf %s "${reg}" | jq -r '.config|(
 	.peers[0]|
 	.public_key+"\n"+               # NR==1
-	.endpoint.v4+"\n"+              # NR==2
-	.endpoint.v6)+"\n"+             # NR==3
-	.interface.addresses.v4+"\n"    # NR==4
-	+.interface.addresses.v6+"\n"+  # NR==5
-	.client_id'                     # NR==6
+	.endpoint.host+"\n"+            # NR==2
+	.endpoint.v4+"\n"+              # NR==3
+	.endpoint.v6)+"\n"+             # NR==4
+	.interface.addresses.v4+"\n"    # NR==5
+	+.interface.addresses.v6+"\n"+  # NR==6
+	.client_id'                     # NR==7
 )
 cfcreds=$(printf %s "${reg}" | jq -r '
 	.id+"\n"+                       # NR==1
@@ -128,11 +129,12 @@ cfcreds=$(printf %s "${reg}" | jq -r '
 )
 endpointhostport=2408
 pubkey=$(printf %s "${cfg}" | awk 'NR==1')
-endpoint4=$(printf %s "${cfg}" | awk 'NR==2' | strip_port)":${endpointhostport}"
-endpoint6=$(printf %s "${cfg}" | awk 'NR==3' | strip_port)":${endpointhostport}"
-addr4=$(printf %s "${cfg}" | awk 'NR==4')
-addr6=$(printf %s "${cfg}" | awk 'NR==5')
-cfclientidb64=$(printf %s "${cfg}" | awk 'NR==6')
+endpoint=$(printf %s "${cfg}" | awk 'NR==2' | strip_port)":${endpointhostport}"
+endpoint4=$(printf %s "${cfg}" | awk 'NR==3' | strip_port)":${endpointhostport}"
+endpoint6=$(printf %s "${cfg}" | awk 'NR==4' | strip_port)":${endpointhostport}"
+addr4=$(printf %s "${cfg}" | awk 'NR==5')
+addr6=$(printf %s "${cfg}" | awk 'NR==6')
+cfclientidb64=$(printf %s "${cfg}" | awk 'NR==7')
 cfclientidhex=$(printf %s "${cfclientidb64}" | base64 -d | hexdump -v -e '/1 "%02x\n"')
 cfclientiddec=$(printf '%s\n' "${cfclientidhex}" | while read -r hex; do printf "%d, " "0x${hex}"; done)
 cfclientiddec="[${cfclientiddec%, }]" # Remove trailing comma and space and add brackets
@@ -167,8 +169,10 @@ cat <<-EOF
 	[Peer]
 	PublicKey = ${pubkey}
 	AllowedIPs = 0.0.0.0/0, ::/0
+	PersistentKeepalive = 25
 	# If UDP 2408 is blocked, you could try UDP 500, UDP 1701, or UDP 4500.
 	Endpoint = ${endpoint4}
 	#Endpoint = ${endpoint6}
+	#Endpoint = ${endpoint}
 EOF
 exit 0
