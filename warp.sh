@@ -111,8 +111,21 @@ reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --heade
 [ "${show_regonly}" = 1 ] && { printf %s "${reg}" | jq; exit 0; }
 
 # Load up variables for the Wireguard config template
-cfg=$(printf %s "${reg}" | jq -r '.config|(.peers[0]|.public_key+"\n"+.endpoint.v4+"\n"+.endpoint.v6)+"\n"+.interface.addresses.v4+"\n"+.interface.addresses.v6+"\n"+.client_id')
-cfcreds=$(printf %s "${reg}" | jq -r '.id+"\n"+.account.id+"\n"+.account.license+"\n"+.token')
+cfg=$(printf %s "${reg}" | jq -r '.config|(
+	.peers[0]|
+	.public_key+"\n"+               # NR==1
+	.endpoint.v4+"\n"+              # NR==2
+	.endpoint.v6)+"\n"+             # NR==3
+	.interface.addresses.v4+"\n"    # NR==4
+	+.interface.addresses.v6+"\n"+  # NR==5
+	.client_id'                     # NR==6
+)
+cfcreds=$(printf %s "${reg}" | jq -r '
+	.id+"\n"+                       # NR==1
+	.account.id+"\n"+               # NR==2
+	.account.license+"\n"+          # NR==3
+	.token'                         # NR==4
+)
 addr4=$(printf %s "${cfg}" | awk 'NR==4')
 addr6=$(printf %s "${cfg}" | awk 'NR==5')
 pubkey=$(printf %s "${cfg}" | awk 'NR==1')
