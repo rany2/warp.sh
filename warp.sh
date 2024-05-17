@@ -188,7 +188,9 @@ if [ -z "${account_license}" ] && [ -n "${teams_ephemeral_token}" ]; then
 elif [ -z "${account_license}" ]; then
 	account_license="Unknown"
 fi
-token=$(printf %s "${cf_creds}" | awk 'NR==4')
+if [ -z "${token}" ]; then
+	token=$(printf %s "${cf_creds}" | awk 'NR==4')
+fi
 
 # Write WARP Wireguard config and quit
 cat <<-EOF
