@@ -77,6 +77,10 @@ help_page() { cat >&2 <<-EOF
 	  4. Pass the output as the value for the parameter -T. The final command will look like:
 	  	  ${0} -T eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.....
 
+	Regarding -T and -R options:
+	  -T and -R both could take a file as an argument. The file should be in the same format as the command line argument.
+	  This is so that the token wouldn't be exposed in the shell history or process list.
+
 	EOF
 
 	exit "${1}"
@@ -95,6 +99,16 @@ while getopts "46stT:R:h" opt; do
 		*) help_page 1 ;;
 	esac
 done
+
+# If a file is provided as an argument to -T, we read the token from the file
+if [ -n "${teams_ephemeral_token}" ] && [ -e "${teams_ephemeral_token}" ]; then
+	teams_ephemeral_token=$(cat "${teams_ephemeral_token}")
+fi
+
+# If a file is provided as an argument to -R, we read the token from the file
+if [ -n "${refresh_token}" ] && [ -e "${refresh_token}" ]; then
+	refresh_token=$(cat "${refresh_token}")
+fi
 
 # If user is okay with forcing IP protocol on curl, we do so
 case "${curl_ip_protocol}" in

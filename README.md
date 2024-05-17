@@ -1,6 +1,6 @@
 # warp.sh
 
-By using this you agree to Cloudflare's ToS: https://www.cloudflare.com/application/terms/  
+By using this you agree to Cloudflare's ToS: <https://www.cloudflare.com/application/terms/>  
 
 ## Quick Guide #1
 
@@ -37,14 +37,24 @@ Usage ./warp.sh [options]
   -h  show this help page and exit only
 ```
 
-### Regarding Teams enrollment:
+### Regarding Teams enrollment
+
   1. Visit https://\<teams id>.cloudflareaccess.com/warp
   2. Authenticate yourself as you would with the official client
   3. Check the source code of the page for the JWT token or use the following code in the "Web Console" (Ctrl+Shift+K):
+
 ```js
 console.log(document.querySelector("meta[http-equiv='refresh']").content.split("=")[2])
 ```
+
   4. Pass the output as the value for the parameter -T. The final command will look like:
+
 ```shell
 ./warp.sh -T eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.....
 ```
+
+### Regarding -T and -R options
+
+`-T` and `-R` both could take a file as an argument. The file should be in the same
+format as the command line argument. This is so that the token wouldn't be exposed
+in the shell history or process list.
