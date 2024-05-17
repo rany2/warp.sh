@@ -32,6 +32,7 @@ Usage ./warp.sh [options]
   -4  use ipv4 for curl
   -6  use ipv6 for curl
   -T  teams JWT token (default no JWT token is sent)
+  -R  refresh token (format is token,device_id,wg_private_key; specify this to get a refreshed config)
   -t  show cloudflare trace and exit only
   -h  show this help page and exit only
 ```

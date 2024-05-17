@@ -23,6 +23,7 @@ done
 cf_trace=0
 curl_ip_protocol=0
 curl_opts=
+refresh_token=
 show_regonly=0
 teams_ephemeral_token=
 
@@ -64,6 +65,7 @@ help_page() { cat >&2 <<-EOF
 	  -4  use ipv4 for curl
 	  -6  use ipv6 for curl
 	  -T  teams JWT token (default no JWT token is sent)
+	  -R  refresh token (format is token,device_id,wg_private_key; specify this to get a refreshed config)
 	  -t  show cloudflare trace and exit only
 	  -h  show this help page and exit only
 
@@ -81,13 +83,14 @@ help_page() { cat >&2 <<-EOF
 }
 
 # Parse options
-while getopts "46stT:h" opt; do
+while getopts "46stT:R:h" opt; do
 	case "${opt}" in
 		4) curl_ip_protocol=4 ;;
 		6) curl_ip_protocol=6 ;;
 		s) show_regonly=1 ;;
 		t) cf_trace=1 ;;
 		T) teams_ephemeral_token="${OPTARG}" ;;
+		R) refresh_token="${OPTARG}" ;;
 		h) help_page 0 ;;
 		*) help_page 1 ;;
 	esac
@@ -106,12 +109,21 @@ if [ "${cf_trace}" -eq 1 ]; then
 	exit 0
 fi
 
-# Register a new account
-wg_private_key="$(wg genkey)"
-wg_public_key="$(printf %s "${wg_private_key}" | wg pubkey)"
-reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --header 'CF-Access-Jwt-Assertion: '"${teams_ephemeral_token}" \
-	--data '{"key":"'"${wg_public_key}"'","install_id":"","fcm_token":"","model":"","serial_number":"","locale":"en_US"}' \
-	"${BASE_URL}/reg")"
+if [ -n "${refresh_token}" ]; then
+	# If a refresh token is provided, we use it to get a new config
+	token=$(printf %s "${refresh_token}" | awk -F, '{print $1}')
+	device_id=$(printf %s "${refresh_token}" | awk -F, '{print $2}')
+	wg_private_key=$(printf %s "${refresh_token}" | awk -F, '{print $3}')
+	wg_public_key=$(printf %s "${wg_private_key}" | wg pubkey)
+	reg="$(cfcurl --header 'Content-Type: application/json' -H "Authorization: Bearer ${token}" "${BASE_URL}/reg/${device_id}")"
+else
+	# Register a new account if no refresh token is provided
+	wg_private_key="$(wg genkey)"
+	wg_public_key="$(printf %s "${wg_private_key}" | wg pubkey)"
+	reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --header 'CF-Access-Jwt-Assertion: '"${teams_ephemeral_token}" \
+		--data '{"key":"'"${wg_public_key}"'","install_id":"","fcm_token":"","model":"","serial_number":"","locale":"en_US"}' \
+		"${BASE_URL}/reg")"
+fi
 
 # DEBUG: Show registration response
 if [ "${show_regonly}" -eq 1 ]; then
@@ -126,8 +138,8 @@ wg_config=$(printf %s "${reg}" | jq -r '.config|(
 	.endpoint.host+"\n"+            # NR==2
 	.endpoint.v4+"\n"+              # NR==3
 	.endpoint.v6)+"\n"+             # NR==4
-	.interface.addresses.v4+"\n"    # NR==5
-	+.interface.addresses.v6+"\n"+  # NR==6
+	.interface.addresses.v4+"\n"+   # NR==5
+	.interface.addresses.v6+"\n"+   # NR==6
 	.client_id                      # NR==7
 	'
 )
