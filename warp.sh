@@ -208,7 +208,7 @@ cat <<-EOF
 	#CFToken = ${token}
 	## Cloudflare Client ID in various formats.
 	## NOTE: this is also referred to as "reserved key" as the client ID
-	##       is put in the reserved key field in the WireGuard handshake.
+	##       is put in the reserved field in the WireGuard header.
 	#CFClientIdB64 = ${client_id_b64}
 	#CFClientIdHex = ${client_id_hex}
 	#CFClientIdDec = ${client_id_dec}
