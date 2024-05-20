@@ -26,6 +26,7 @@ curl_opts=
 refresh_token=
 show_regonly=0
 teams_ephemeral_token=
+token=
 
 # Helper function to send traffic to Cloudflare API without
 # tripping up their TLS fingerprinting mechanism and triggering
