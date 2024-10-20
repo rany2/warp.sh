@@ -13,8 +13,17 @@ DEPENDENCIES="curl jq awk printf cat base64 hexdump wg"
 exit_with_error=0
 for dep in ${DEPENDENCIES}; do
 	if ! command -v "${dep}" >/dev/null 2>&1; then
-		echo "Error: ${dep} is not installed." >&2
-		exit_with_error=1
+		if [ "${dep}" = "hexdump" ]; then
+			if command -v od >/dev/null 2>&1; then
+				alias hexdump='od -An -tx1 -v'
+			else
+				echo "Error: Neither hexdump nor od is installed." >&2
+				exit_with_error=1
+			fi
+		else
+			echo "Error: ${dep} is not installed." >&2
+			exit_with_error=1
+		fi
 	fi
 done
 [ "${exit_with_error}" -eq 1 ] && exit 1
@@ -32,20 +41,35 @@ token=
 # tripping up their TLS fingerprinting mechanism and triggering
 # a block.
 cfcurl() {
-	# shellcheck disable=SC2086
-	curl \
-		--header 'User-Agent: okhttp/3.12.1' \
-		--header 'CF-Client-Version: a-6.16-2483' \
-		--header 'Accept: application/json; charset=UTF-8' \
-		--tls-max 1.2 \
-		--ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-CCM:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-CCM:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:AES256-GCM-SHA384:AES256-CCM:AES128-GCM-SHA256:AES128-CCM:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES256-CCM:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-CCM:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA' \
-		--disable \
-		--silent \
-		--show-error \
-		--compressed \
-		--fail \
-		${curl_opts} \
-		"${@}"
+	# Check if curl supports --compressed
+    if curl --compressed --help >/dev/null 2>&1; then
+        curl \
+            --header 'User-Agent: 1.1.1.1/6.81' \
+            --header 'CF-Client-Version: a-6.81-2410012252.0' \
+            --header 'Accept: application/json; charset=UTF-8' \
+            --tls-max 1.2 \
+            --ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-CCM:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-CCM:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:AES256-GCM-SHA384:AES256-CCM:AES128-GCM-SHA256:AES128-CCM:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES256-CCM:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-CCM:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA' \
+            --disable \
+            --silent \
+            --show-error \
+            --fail \
+            --compressed \
+            ${curl_opts} \
+            "$@"
+    else
+        curl \
+            --header 'User-Agent: 1.1.1.1/6.81' \
+            --header 'CF-Client-Version: a-6.81-2410012252.0' \
+            --header 'Accept: application/json; charset=UTF-8' \
+            --tls-max 1.2 \
+            --ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-CCM:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-CCM:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:AES256-GCM-SHA384:AES256-CCM:AES128-GCM-SHA256:AES128-CCM:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES256-CCM:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-CCM:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA' \
+            --disable \
+            --silent \
+            --show-error \
+            --fail \
+            ${curl_opts} \
+            "$@"
+    fi
 }
 
 # Strip port from IP:port string
@@ -135,8 +159,8 @@ else
 	# Register a new account if no refresh token is provided
 	wg_private_key="$(wg genkey)"
 	wg_public_key="$(printf %s "${wg_private_key}" | wg pubkey)"
-	reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --header 'CF-Access-Jwt-Assertion: '"${teams_ephemeral_token}" \
-		--data '{"key":"'"${wg_public_key}"'","install_id":"","fcm_token":"","model":"","serial_number":"","locale":"en_US"}' \
+	reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --header "CF-Access-Jwt-Assertion: ${teams_ephemeral_token}" \
+		--data '{"key":"'"${wg_public_key}"'","install_id":"","fcm_token":"","model":"","serial_number":"","name":"","locale":"en_US"}' \
 		"${BASE_URL}/reg")"
 fi
 
