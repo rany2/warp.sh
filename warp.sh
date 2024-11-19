@@ -133,8 +133,8 @@ if [ -n "${refresh_token}" ]; then
 	reg="$(cfcurl --header 'Content-Type: application/json' -H "Authorization: Bearer ${token}" "${BASE_URL}/reg/${device_id}")"
 else
 	# Ask the user for the name to use in the registration
-	read -p "Enter the desired name for the configuration (default: WG-conf-00): " config_name
-	config_name=${config_name:-WG-conf-00} # Use 'WG-conf-00' if no input is provided
+	read -p "Enter the desired name for the configuration (default: WG-device-00): " config_name
+	config_name=${config_name:-WG-device-00} # Use 'WG-device-00' if no input is provided
 
 	# Register a new account if no refresh token is provided
 	wg_private_key="$(wg genkey)"
