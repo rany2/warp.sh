@@ -132,12 +132,16 @@ if [ -n "${refresh_token}" ]; then
 	wg_public_key=$(printf %s "${wg_private_key}" | wg pubkey)
 	reg="$(cfcurl --header 'Content-Type: application/json' -H "Authorization: Bearer ${token}" "${BASE_URL}/reg/${device_id}")"
 else
+	# Ask the user for the name to use in the registration
+	read -p "Enter the desired name for the configuration (default: WG-conf-00): " config_name
+	config_name=${config_name:-WG-conf-00} # Use 'WG-conf-00' if no input is provided
+
 	# Register a new account if no refresh token is provided
 	wg_private_key="$(wg genkey)"
 	wg_public_key="$(printf %s "${wg_private_key}" | wg pubkey)"
 	reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --header 'CF-Access-Jwt-Assertion: '"${teams_ephemeral_token}" \
-		--data '{"key":"'"${wg_public_key}"'","install_id":"","fcm_token":"","model":"WG-Conf","serial_number":"","name":"WG-Conf-01","locale":"en_US"}' \
-		"${BASE_URL}/reg")"
+	    --data '{"key":"'"${wg_public_key}"'","install_id":"","fcm_token":"","model":"WG-Conf","serial_number":"","name":"'"${config_name}"'","locale":"en_US"}' \
+	    "${BASE_URL}/reg")"
 fi
 
 # DEBUG: Show registration response
