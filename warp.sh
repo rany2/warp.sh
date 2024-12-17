@@ -41,6 +41,8 @@ refresh_token=
 show_regonly=0
 teams_ephemeral_token=
 token=
+model_name="rany2/warp.sh"
+device_name=
 
 # Helper function to send traffic to Cloudflare API without
 # tripping up their TLS fingerprinting mechanism and triggering
@@ -80,6 +82,8 @@ help_page() { cat >&2 <<-EOF
 	  -6  use ipv6 for curl
 	  -T  teams JWT token (default no JWT token is sent)
 	  -R  refresh token (format is token,device_id,wg_private_key; specify this to get a refreshed config)
+	  -m  model name (default is rany2/warp.sh)
+	  -d  device name (default is blank)
 	  -t  show cloudflare trace and exit only
 	  -h  show this help page and exit only
 
@@ -114,7 +118,7 @@ clientid_to_hex() {
 }
 
 # Parse options
-while getopts "46stT:R:h" opt; do
+while getopts "46stT:R:m:d:h" opt; do
 	case "${opt}" in
 		4) curl_ip_protocol=4 ;;
 		6) curl_ip_protocol=6 ;;
@@ -122,6 +126,8 @@ while getopts "46stT:R:h" opt; do
 		t) cf_trace=1 ;;
 		T) teams_ephemeral_token="${OPTARG}" ;;
 		R) refresh_token="${OPTARG}" ;;
+		m) model_name="${OPTARG}" ;;
+		d) device_name="${OPTARG}" ;;
 		h) help_page 0 ;;
 		*) help_page 1 ;;
 	esac
@@ -162,7 +168,7 @@ else
 	wg_private_key="$(wg genkey)"
 	wg_public_key="$(printf %s "${wg_private_key}" | wg pubkey)"
 	reg="$(cfcurl --header 'Content-Type: application/json' --request "POST" --header 'CF-Access-Jwt-Assertion: '"${teams_ephemeral_token}" \
-		--data '{"key":"'"${wg_public_key}"'","install_id":"","fcm_token":"","model":"","serial_number":"","locale":"en_US"}' \
+		--data '{"key":"'"${wg_public_key}"'","install_id":"","fcm_token":"","model":"'"${model_name}"'","serial_number":"","name":"'"${device_name}"'","locale":"en_US"}' \
 		"${BASE_URL}/reg")"
 fi
 
