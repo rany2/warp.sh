@@ -48,8 +48,8 @@ token=
 cfcurl() {
 	# shellcheck disable=SC2086
 	curl \
-		--header 'User-Agent: okhttp/3.12.1' \
-		--header 'CF-Client-Version: a-6.16-2483' \
+		--header 'User-Agent: 1.1.1.1/6.81' \
+		--header 'CF-Client-Version: a-6.81-2410012252.0' \
 		--header 'Accept: application/json; charset=UTF-8' \
 		--tls-max 1.2 \
 		--ciphers 'ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES256-CCM:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-CCM:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES128-SHA:AES256-GCM-SHA384:AES256-CCM:AES128-GCM-SHA256:AES128-CCM:AES256-SHA256:AES128-SHA256:AES256-SHA:AES128-SHA:DHE-RSA-AES256-GCM-SHA384:DHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES256-CCM:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES128-CCM:DHE-RSA-AES256-SHA256:DHE-RSA-AES128-SHA256:DHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA' \
@@ -227,6 +227,12 @@ cat <<-EOF
 	Address = ${address_ipv4}, ${address_ipv6}
 	DNS = 1.1.1.1, 1.0.0.1, 2606:4700:4700::1111, 2606:4700:4700::1001
 	MTU = 1280
+
+	# To refresh the config, run the following command:
+	# ${0} -R '${token},${device_id},${wg_private_key}'
+	# or
+	# ${0} -R /path/to/refresh_token.txt
+	# where refresh_token.txt contains the above string.
 
 	# Cloudflare Warp specific variables
 	#CFDeviceId = ${device_id}
